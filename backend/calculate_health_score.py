@@ -2,9 +2,8 @@ import mysql.connector
 import pandas as pd
 import os
 import json
-with open("db_config.json") as f:
-    db_config = json.load(f)
-    db_config['password'] = os.environ.get('sql_pass')
+from utils import config
+db_config = config()
     
 conn = mysql.connector.connect(**db_config)
 cursor = conn.cursor(dictionary=True)
