@@ -3,13 +3,11 @@ from faker import Faker
 import random
 from datetime import datetime, timedelta
 import os
+import json
 # --- Database Connection ---
-db_config = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': os.environ.get('sql_pass'),  # change this
-    'database': 'customer_health'
-}
+with open("db_config.json") as f:
+    db_config = json.load(f)
+    db_config['password'] = os.environ.get('sql_pass')
 conn = mysql.connector.connect(**db_config)
 cursor = conn.cursor()
 faker = Faker()

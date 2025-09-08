@@ -1,0 +1,6 @@
+{
+    "host": "localhost",
+    "user": "root",
+    "password": "PASS",
+    "database": "customer_health"
+}

@@ -1,12 +1,11 @@
 import mysql.connector
 import pandas as pd
 import os
-db_config = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': os.environ.get('sql_pass'),
-    'database': 'customer_health'
-}
+import json
+with open("db_config.json") as f:
+    db_config = json.load(f)
+    db_config['password'] = os.environ.get('sql_pass')
+    
 conn = mysql.connector.connect(**db_config)
 cursor = conn.cursor(dictionary=True)
 def login_freq():
@@ -158,3 +157,5 @@ def get_health_scores():
     )
 
     return df[['customer_id','health_score']]
+
+# print(get_health_scores())
