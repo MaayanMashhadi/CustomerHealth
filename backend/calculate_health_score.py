@@ -158,5 +158,3 @@ def get_health_scores():
     )
 
     return df[['customer_id','health_score']]
-
-print(get_health_scores())
