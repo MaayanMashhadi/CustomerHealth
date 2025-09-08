@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Customer Health Dashboard</title>
+</head>
+<body>
+    <h1>Customer Health Dashboard</h1>
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Health Score</th>
+        </tr>
+        {% for c in customers %}
+        <tr>
+            <td>{{ c.customer_id }}</td>
+            <td>{{ c.health_score }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
