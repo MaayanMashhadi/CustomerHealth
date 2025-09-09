@@ -1,0 +1,13 @@
+# Dockerfile.tests
+FROM python:3.11-slim
+
+# Set the working directory to match your project's structure
+WORKDIR /app
+
+# Install dependencies for tests and the backend
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt pytest
+
+# CMD is handled by your docker-compose.yml,
+# but can be left here as a default
+CMD ["pytest", "--maxfail=1", "--disable-warnings", "-v"]

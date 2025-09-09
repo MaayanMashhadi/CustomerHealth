@@ -1,5 +1,5 @@
 -- Create database
-CREATE DATABASE customer_health;
+-- CREATE DATABASE customer_health;
 USE customer_health;
 
 -- Customers table

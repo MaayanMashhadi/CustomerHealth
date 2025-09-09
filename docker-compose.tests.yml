@@ -1,0 +1,56 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: Mayan2020!
+      DB_NAME: customer_health
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./src/backend:/app/src/backend
+      - ./src/db_config.json:/app/src/db_config.json
+    restart: always
+
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: Mayan2020!
+      MYSQL_DATABASE: customer_health
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/1.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pMayan2020!"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.tests
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      DB_HOST: mock-db # Use this for mock database configuration
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./requirements.txt:/app/requirements.txt
+
+volumes:
+  db_data:

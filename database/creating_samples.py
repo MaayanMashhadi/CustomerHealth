@@ -4,14 +4,31 @@ import random
 from datetime import datetime, timedelta
 import os
 import json
+from pathlib import Path
+BASE_DIR = Path(__file__).parent
 # --- Database Connection ---
-with open("../db_config.json") as f:
+print(f"using base dir {BASE_DIR}")
+with open(str(BASE_DIR.parent / "src/db_config.json")) as f:
     db_config = json.load(f)
-    db_config['password'] = os.environ.get('sql_pass')
+db_config["host"] = os.getenv("DB_HOST", db_config["host"])
 conn = mysql.connector.connect(**db_config)
 cursor = conn.cursor()
 faker = Faker()
-
+# --- Idempotency Check ---
+try:
+    cursor.execute("SELECT COUNT(*) FROM customers")
+    result = cursor.fetchone()
+    if result[0] > 0:
+        print("Data already exists. Skipping data generation.")
+        cursor.close()
+        conn.close()
+        # Exit the script
+        exit()
+except mysql.connector.Error as err:
+    print(f"Error checking for existing data: {err}")
+    cursor.close()
+    conn.close()
+    exit()
 # --- Parameters ---
 NUM_CUSTOMERS = 60
 NUM_MONTHS = 3
