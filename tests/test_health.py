@@ -10,10 +10,11 @@ from decimal import Decimal
 # Add the parent directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Import the functions we want to test
-from backend.calculate_health_score import (
-    login_freq, features_used, tickets, invoice, api_call, get_health_scores
-)
+with patch('mysql.connector.connect'), patch('src.backend.calculate_health_score.cursor') as mock_cursor_patch:
+    # Import after patching to ensure the mock is in place
+    import src.backend.calculate_health_score
+    from src.backend.calculate_health_score import login_freq, features_used, tickets, invoice, api_call, get_health_scores
+
 
 class TestHealthScoreCalculation(unittest.TestCase):
     """Unit tests for health score calculation functions"""
@@ -25,7 +26,7 @@ class TestHealthScoreCalculation(unittest.TestCase):
         self.mock_cursor = Mock()
         self.mock_cursor.fetchall = Mock()
         
-    @patch('backend.calculate_health_score.cursor')
+    @patch('src.backend.calculate_health_score.cursor')
     def test_login_freq_calculation(self, mock_cursor):
         """Test login frequency calculation with mock data"""
         # Arrange
@@ -53,7 +54,7 @@ class TestHealthScoreCalculation(unittest.TestCase):
         self.assertEqual(result.iloc[0]['customer_id'], 'cust-001')
         self.assertEqual(float(result.iloc[0]['avg_logins_per_week']), 15.5)
     
-    @patch('backend.calculate_health_score.cursor')
+    @patch('src.backend.calculate_health_score.cursor')
     def test_features_used_calculation(self, mock_cursor):
         """Test feature adoption score calculation with mock data"""
         # Arrange
@@ -79,7 +80,7 @@ class TestHealthScoreCalculation(unittest.TestCase):
         self.assertEqual(len(result), 3)
         self.assertEqual(float(result.iloc[0]['feature_adoption_score']), 80.0)
     
-    @patch('backend.calculate_health_score.cursor')
+    @patch('src.backend.calculate_health_score.cursor')
     def test_tickets_calculation(self, mock_cursor):
         """Test support tickets score calculation with mock data"""
         # Arrange
@@ -111,7 +112,7 @@ class TestHealthScoreCalculation(unittest.TestCase):
         self.assertEqual(result.iloc[1]['ticket_score'], 75)   # 2 tickets = 75 score
         self.assertEqual(result.iloc[2]['ticket_score'], 25)   # 6 tickets = 25 score
     
-    @patch('backend.calculate_health_score.cursor')
+    @patch('src.backend.calculate_health_score.cursor')
     def test_invoice_calculation(self, mock_cursor):
         """Test invoice payment score calculation with mock data"""
         # Arrange
@@ -137,7 +138,7 @@ class TestHealthScoreCalculation(unittest.TestCase):
         self.assertEqual(len(result), 3)
         self.assertEqual(float(result.iloc[0]['invoice_payment_score']), 95.0)
     
-    @patch('backend.calculate_health_score.cursor')
+    @patch('src.backend.calculate_health_score.cursor')
     def test_api_call_calculation(self, mock_cursor):
         """Test API usage score calculation with mock data"""
         # Arrange
@@ -171,10 +172,10 @@ class TestHealthScoreCalculation(unittest.TestCase):
     def test_ticket_score_function_edge_cases(self):
         """Test edge cases for ticket scoring function"""
         # Import the function directly to test it
-        from backend.calculate_health_score import tickets
+        from src.backend.calculate_health_score import tickets
         
         # Mock the cursor to return edge case data
-        with patch('backend.calculate_health_score.cursor') as mock_cursor:
+        with patch('src.backend.calculate_health_score.cursor') as mock_cursor:
             # Test boundary conditions
             test_cases = [
                 ({'customer_id': 'test', 'open_tickets': 0}, 100),
@@ -194,9 +195,9 @@ class TestHealthScoreCalculation(unittest.TestCase):
 
     def test_api_score_function_edge_cases(self):
         """Test edge cases for API scoring function"""
-        from backend.calculate_health_score import api_call
+        from src.backend.calculate_health_score import api_call
         
-        with patch('backend.calculate_health_score.cursor') as mock_cursor:
+        with patch('src.backend.calculate_health_score.cursor') as mock_cursor:
             # Test boundary conditions
             test_cases = [
                 ({'customer_id': 'test', 'avg_api_calls_per_week': Decimal('500.0')}, 100),
@@ -245,11 +246,11 @@ class TestHealthScoreCalculation(unittest.TestCase):
 class TestIntegratedHealthScoreCalculation(unittest.TestCase):
     """Integration tests for the complete health score calculation"""
     
-    @patch('backend.calculate_health_score.api_call')
-    @patch('backend.calculate_health_score.invoice')
-    @patch('backend.calculate_health_score.tickets')
-    @patch('backend.calculate_health_score.features_used')
-    @patch('backend.calculate_health_score.login_freq')
+    @patch('src.backend.calculate_health_score.api_call')
+    @patch('src.backend.calculate_health_score.invoice')
+    @patch('src.backend.calculate_health_score.tickets')
+    @patch('src.backend.calculate_health_score.features_used')
+    @patch('src.backend.calculate_health_score.login_freq')
     def test_get_health_scores_integration(self, mock_login, mock_features, mock_tickets, mock_invoice, mock_api):
         """Test the complete health score calculation with mocked components"""
         # Arrange - Mock all component functions
@@ -302,11 +303,11 @@ class TestIntegratedHealthScoreCalculation(unittest.TestCase):
         for score in result['health_score']:
             self.assertTrue(0 <= score <= 100, f"Health score {score} is out of range")
     
-    @patch('backend.calculate_health_score.api_call')
-    @patch('backend.calculate_health_score.invoice')
-    @patch('backend.calculate_health_score.tickets')
-    @patch('backend.calculate_health_score.features_used')
-    @patch('backend.calculate_health_score.login_freq')
+    @patch('src.backend.calculate_health_score.api_call')
+    @patch('src.backend.calculate_health_score.invoice')
+    @patch('src.backend.calculate_health_score.tickets')
+    @patch('src.backend.calculate_health_score.features_used')
+    @patch('src.backend.calculate_health_score.login_freq')
     def test_get_health_scores_with_missing_data(self, mock_login, mock_features, mock_tickets, mock_invoice, mock_api):
         """Test health score calculation with missing data for some customers"""
         # Arrange - Mock functions with missing data for some customers
