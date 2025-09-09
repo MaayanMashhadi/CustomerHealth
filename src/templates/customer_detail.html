@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Customer Health Detail</title>
+    <style>
+        table { border-collapse: collapse; width: 50%; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Health Details for Customer {{ customer.customer_id }}</h1>
+    
+    <table>
+        <tr>
+            <th>Metric</th>
+            <th>Score</th>
+        </tr>
+        <tr>
+            <td>Login Score</td>
+            <td>{{ customer.login_score }}</td>
+        </tr>
+        <tr>
+            <td>Feature Adoption Score</td>
+            <td>{{ customer.feature_score }}</td>
+        </tr>
+        <tr>
+            <td>Ticket Score</td>
+            <td>{{ customer.ticket_score }}</td>
+        </tr>
+        <tr>
+            <td>Invoice Payment Score</td>
+            <td>{{ customer.invoice_payment_score }}</td>
+        </tr>
+        <tr>
+            <td>API Usage Score</td>
+            <td>{{ customer.api_score }}</td>
+        </tr>
+        <tr>
+            <th>Overall Health Score</th>
+            <th>{{ customer.health_score }}</th>
+        </tr>
+    </table>
+</body>
+</html>

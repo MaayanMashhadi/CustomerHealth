@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Event Submission Result</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Event Submission Result</h1>
+    
+    {% if success %}
+        <p class="success">{{ message }}</p>
+    {% else %}
+        <p class="error">{{ message }}</p>
+    {% endif %}
+
+    <h2>Event Data</h2>
+    <pre>{{ event | tojson(indent=2) }}</pre>
+
+    <a href="/api/customers">Back to Customers</a>
+</body>
+</html>
