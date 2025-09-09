@@ -171,4 +171,73 @@ def get_health_scores():
 
     return df[['customer_id','health_score']]
 
+
+def get_health_details():
+    """
+    Return a DataFrame with all health score components for each customer:
+    - customer_id
+    - login_score
+    - feature_score
+    - ticket_score
+    - invoice_payment_score
+    - api_score
+    - overall health_score
+    """
+    df_login = login_freq()
+    df_feature = features_used()
+    df_tickets = tickets()
+    df_invoice = invoice()
+    df_api = api_call()
+
+    # Merge all dataframes on customer_id
+    df = df_login.merge(df_feature, on='customer_id', how='outer') \
+                 .merge(df_tickets[['customer_id','ticket_score']], on='customer_id', how='outer') \
+                 .merge(df_invoice, on='customer_id', how='outer') \
+                 .merge(df_api[['customer_id','api_score']], on='customer_id', how='outer')
+
+    # Convert login frequency to score
+    def login_score(avg_logins):
+        if avg_logins >= 20: return 100
+        elif avg_logins >= 10: return 75
+        elif avg_logins >= 5: return 50
+        elif avg_logins >= 1: return 25
+        else: return 0
+
+    df['login_score'] = df['avg_logins_per_week'].apply(login_score)
+    df['feature_score'] = df['feature_adoption_score']  # already 0–100
+
+    # Define weights
+    weights = {
+        'login_score': 0.25,
+        'feature_score': 0.25,
+        'ticket_score': 0.2,
+        'invoice_payment_score': 0.15,
+        'api_score': 0.15
+    }
+
+    # Ensure all columns are floats
+    decimal_cols = ['login_score', 'feature_score', 'ticket_score', 'invoice_payment_score', 'api_score']
+    for col in decimal_cols:
+        df[col] = df[col].astype(float)
+
+    # Fill missing values
+    df['login_score'] = df['login_score'].fillna(0)
+    df['feature_score'] = df['feature_score'].fillna(0)
+    df['ticket_score'] = df['ticket_score'].fillna(100)
+    df['invoice_payment_score'] = df['invoice_payment_score'].fillna(100)
+    df['api_score'] = df['api_score'].fillna(25)
+
+    # Calculate overall health score
+    df['health_score'] = (
+        df['login_score']*weights['login_score'] +
+        df['feature_score']*weights['feature_score'] +
+        df['ticket_score']*weights['ticket_score'] +
+        df['invoice_payment_score']*weights['invoice_payment_score'] +
+        df['api_score']*weights['api_score']
+    )
+
+    # Return all columns
+    return df[['customer_id','login_score','feature_score','ticket_score','invoice_payment_score','api_score','health_score']]
+
+
 # print(get_health_scores())

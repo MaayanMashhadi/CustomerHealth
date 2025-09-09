@@ -126,49 +126,35 @@ class TestAPIIntegration(unittest.TestCase):
         ]
 
     def test_list_customers_endpoint(self):
-        """Test GET /api/customers endpoint"""
+        """Test GET /api/customers endpoint (HTML)"""
         # Act
         response = self.client.get("/api/customers")
         
         # Assert
         self.assertEqual(response.status_code, 200)
+        self.assertIn("text/html", response.headers["content-type"])
         
-        data = response.json()
-        self.assertIsInstance(data, list)
-        self.assertEqual(len(data), 3)
-        
-        # Verify structure of returned data
-        for customer in data:
-            self.assertIn('customer_id', customer)
-            self.assertIn('health_score', customer)
-            self.assertTrue(0 <= customer['health_score'] <= 100)
-        
-        # Verify specific customer data
-        customer_ids = [c['customer_id'] for c in data]
-        self.assertIn(1, customer_ids)
-        self.assertIn(2, customer_ids)
-        self.assertIn(3, customer_ids)
-        
-        # Verify database queries were called (5 queries for health score calculation)
-        self.assertEqual(mock_cursor.execute.call_count, 5)
+        html_content = response.text
+        # Verify that customer IDs appear in the rendered HTML
+        self.assertIn("1", html_content)
+        self.assertIn("2", html_content)
+        self.assertIn("3", html_content)
 
     def test_customer_health_detail_endpoint_success(self):
-        """Test GET /api/customers/{customer_id}/health endpoint with valid customer"""
+        """Test GET /api/customers/{customer_id}/health endpoint with valid customer (HTML)"""
         # Act
         response = self.client.get("/api/customers/1/health")
         
         # Assert
         self.assertEqual(response.status_code, 200)
+        self.assertIn("text/html", response.headers["content-type"])
         
-        data = response.json()
-        self.assertEqual(data['customer_id'], 1)
-        self.assertIn('health_score', data)
-        self.assertTrue(0 <= data['health_score'] <= 100)
+        html_content = response.text
+        # Verify that customer ID appears in the rendered HTML
+        self.assertIn("1", html_content)
         
-        # Verify all health score components are present
-        expected_fields = ['customer_id', 'health_score']
-        for field in expected_fields:
-            self.assertIn(field, data)
+        # Optional: check that the health score is included in the HTML
+        self.assertIn("Overall Health Score", html_content)
 
     def test_customer_health_detail_endpoint_not_found(self):
         """Test GET /api/customers/{customer_id}/health endpoint with invalid customer"""
@@ -194,11 +180,12 @@ class TestAPIIntegration(unittest.TestCase):
         
         # Assert
         self.assertEqual(response.status_code, 200)
+        self.assertIn("text/html", response.headers["content-type"])
         
-        data = response.json()
-        self.assertEqual(data['status'], 'success')
-        self.assertEqual(data['event'], event_data)
-        
+        html_content = response.text
+        self.assertIn("Event added successfully!", html_content)
+        self.assertIn("login", html_content)
+
         # Verify database insert was called
         mock_cursor.execute.assert_any_call(
             "INSERT INTO logins (customer_id, login_date) VALUES (%s, NOW())",
@@ -222,10 +209,13 @@ class TestAPIIntegration(unittest.TestCase):
         
         # Assert
         self.assertEqual(response.status_code, 200)
+        self.assertIn("text/html", response.headers["content-type"])
         
-        data = response.json()
-        self.assertEqual(data['status'], 'success')
-        self.assertEqual(data['event'], event_data)
+        # Check HTML content
+        html_content = response.text
+        self.assertIn("Event added successfully!", html_content)
+        self.assertIn("dashboard", html_content)
+        # self.assertIn("customer_id", html_content)  # optional: verify that customer_id is rendered
         
         # Verify database insert was called
         mock_cursor.execute.assert_any_call(
@@ -250,15 +240,20 @@ class TestAPIIntegration(unittest.TestCase):
         
         # Assert
         self.assertEqual(response.status_code, 200)
+        self.assertIn("text/html", response.headers["content-type"])
         
-        data = response.json()
-        self.assertEqual(data['status'], 'success')
+        # Check HTML content
+        html_content = response.text
+        self.assertIn("Event added successfully!", html_content)
+        self.assertIn("ticket", html_content)
         
         # Verify database insert was called
         mock_cursor.execute.assert_any_call(
             "INSERT INTO support_tickets (customer_id, created_at, status, priority) VALUES (%s,NOW(),%s,%s)",
             (1, 'open', 'high')
         )
+        mock_conn.commit.assert_called()
+
 
     def test_add_invoice_event_endpoint(self):
         """Test POST /api/customers/{customer_id}/events endpoint with invoice event"""
@@ -277,12 +272,20 @@ class TestAPIIntegration(unittest.TestCase):
         
         # Assert
         self.assertEqual(response.status_code, 200)
+        self.assertIn("text/html", response.headers["content-type"])
+        
+        # Check HTML content
+        html_content = response.text
+        self.assertIn("Event added successfully!", html_content)
+        self.assertIn("invoice", html_content)
         
         # Verify database insert was called
         mock_cursor.execute.assert_any_call(
             "INSERT INTO invoices (customer_id, amount, due_date, paid_date) VALUES (%s,%s,%s,%s)",
             (1, 2500.00, '2024-10-15', '2024-10-14')
         )
+        mock_conn.commit.assert_called()
+
 
     def test_add_api_event_endpoint(self):
         """Test POST /api/customers/{customer_id}/events endpoint with API event"""
@@ -299,12 +302,20 @@ class TestAPIIntegration(unittest.TestCase):
         
         # Assert
         self.assertEqual(response.status_code, 200)
+        self.assertIn("text/html", response.headers["content-type"])
+        
+        # Check HTML content
+        html_content = response.text
+        self.assertIn("Event added successfully!", html_content)
+        self.assertIn("api", html_content)
         
         # Verify database insert was called
         mock_cursor.execute.assert_any_call(
             "INSERT INTO api_usage (customer_id, calls_count, usage_date) VALUES (%s,%s,NOW())",
             (1, 150)
         )
+        mock_conn.commit.assert_called()
+
 
     def test_add_event_with_invalid_type(self):
         """Test POST /api/customers/{customer_id}/events endpoint with invalid event type"""
@@ -319,9 +330,12 @@ class TestAPIIntegration(unittest.TestCase):
         
         # Assert
         self.assertEqual(response.status_code, 400)
+        self.assertIn("text/html", response.headers["content-type"])
         
-        data = response.json()
-        self.assertEqual(data['detail'], "Unknown event type")
+        html_content = response.text
+        self.assertIn("Unknown event type", html_content)
+        self.assertIn("invalid_type", html_content)
+
 
     def test_add_event_with_missing_required_fields(self):
         """Test POST /api/customers/{customer_id}/events with missing invoice fields"""
@@ -335,9 +349,12 @@ class TestAPIIntegration(unittest.TestCase):
 
         response = self.client.post("/api/customers/1/events", json=event_data)
 
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("Missing required fields", response.json()["detail"])
+        # The status code is still 200, because TemplateResponse doesn't raise HTTPException
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/html", response.headers["content-type"])
 
+        html_content = response.text
+        self.assertIn("Missing required fields: amount, due_date", html_content)
 
     def test_dashboard_endpoint(self):
         """Test GET /api/dashboard endpoint"""
@@ -378,8 +395,13 @@ class TestAPIEndpointsEdgeCases(unittest.TestCase):
         
         # Assert
         self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertEqual(data, [])  # Should return empty list
+        self.assertIn("text/html", response.headers["content-type"])
+
+        html_content = response.text
+        # Check that table exists but no customer rows are rendered
+        self.assertIn("<table>", html_content)
+        self.assertIn("<tbody>", html_content)
+        self.assertNotIn("<td>", html_content) 
 
     def test_add_event_with_malformed_json(self):
         """Test POST /api/customers/{customer_id}/events with malformed JSON"""

@@ -6,7 +6,7 @@ import mysql.connector
 import pandas as pd
 from pathlib import Path
 import json
-from src.backend.calculate_health_score import get_health_scores
+from src.backend.calculate_health_score import get_health_scores, get_health_details
 from src.utils import config
 db_config = config()
 app = FastAPI()
@@ -14,23 +14,42 @@ BASE_DIR = Path(__file__).parent
 # Construct the absolute path to the templates directory
 templates = Jinja2Templates(directory=str(BASE_DIR.parent / "templates"))
 
-@app.get("/api/customers")
-def list_customers():
+@app.get("/api/customers", response_class=HTMLResponse)
+def list_customers(request: Request):
+    # Get health scores as DataFrame
     df = get_health_scores()
-    return df.to_dict(orient='records')
+    
+    # Convert to list of dicts for templating
+    customers = df.to_dict(orient='records')
+    
+    # Render the HTML template
+    return templates.TemplateResponse("customers.html", {"request": request, "customers": customers})
 
-@app.get("/api/customers/{customer_id}/health")
-def customer_health(customer_id: int):
-    df = get_health_scores()
-    customer = df[df['customer_id']==customer_id]
+@app.get("/api/customers/{customer_id}/health", response_class=HTMLResponse)
+def customer_health(request: Request, customer_id: int):
+    # Get all health scores
+    
+    df = get_health_details()
+    
+    # Filter for the specific customer
+    customer = df[df['customer_id'] == customer_id]
     if customer.empty:
         raise HTTPException(status_code=404, detail="Customer not found")
-    return customer.to_dict(orient='records')[0]
+    
+    # Convert to dict for templating
+    customer_data = customer.to_dict(orient='records')[0]
+    print(customer_data)
+    # Render template
+    return templates.TemplateResponse(
+        "customer_detail.html",
+        {"request": request, "customer": customer_data}
+    )
 
 from fastapi import HTTPException
 
-@app.post("/api/customers/{customer_id}/events")
-def add_event(customer_id: int, event: dict):
+@app.post("/api/customers/{customer_id}/events", response_class=HTMLResponse)
+async def add_event_html(request: Request, customer_id: int, event: dict):
+    event = await request.json()
     event_type = event.get("type")
     details = event.get("details", {})
 
@@ -43,16 +62,26 @@ def add_event(customer_id: int, event: dict):
     }
 
     if event_type not in required_fields:
-        raise HTTPException(status_code=400, detail="Unknown event type")
+        return templates.TemplateResponse(
+        "event_result.html",
+        {
+            "request": request,
+            "success": False,
+            "message": f"Unknown event type: {event_type}",
+            "event": event
+        },
+        status_code=400
+    )
 
     # Validate required fields
     missing = [f for f in required_fields[event_type] if f not in details]
     if missing:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Missing required fields: {', '.join(missing)}"
+        return templates.TemplateResponse(
+            "event_result.html",
+            {"request": request, "success": False, "message": f"Missing required fields: {', '.join(missing)}", "event": event}
         )
 
+    # Insert into database
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor()
     try:
@@ -87,7 +116,10 @@ def add_event(customer_id: int, event: dict):
         cursor.close()
         conn.close()
 
-    return {"status": "success", "event": event}
+    return templates.TemplateResponse(
+        "event_result.html",
+        {"request": request, "success": True, "message": "Event added successfully!", "event": event}
+    )
 
 
 @app.get("/api/dashboard", response_class=HTMLResponse)
