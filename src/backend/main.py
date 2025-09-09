@@ -77,7 +77,8 @@ async def add_event_html(request: Request, customer_id: int, event: dict):
     if missing:
         return templates.TemplateResponse(
             "event_result.html",
-            {"request": request, "success": False, "message": f"Missing required fields: {', '.join(missing)}", "event": event}
+            {"request": request, "success": False, "message": f"Missing required fields: {', '.join(missing)}", "event": event},
+            
         )
 
     # Insert into database

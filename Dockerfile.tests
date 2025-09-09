@@ -10,4 +10,5 @@ RUN pip install --no-cache-dir -r requirements.txt pytest
 
 # CMD is handled by your docker-compose.yml,
 # but can be left here as a default
-CMD ["pytest", "--maxfail=1", "--disable-warnings", "-v"]
+CMD ["pytest", "--maxfail=1", "--disable-warnings", "-v", "--cov=src/backend", "--cov-report=term-missing"]
+

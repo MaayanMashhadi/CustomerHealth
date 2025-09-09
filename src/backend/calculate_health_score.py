@@ -168,8 +168,11 @@ def get_health_scores():
         df['invoice_payment_score']*weights['invoice_payment_score'] +
         df['api_score']*weights['api_score']
     )
+    
 
     return df[['customer_id','health_score']]
+
+
 
 
 def get_health_details():

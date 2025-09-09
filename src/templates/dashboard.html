@@ -2,30 +2,63 @@
 <html>
 <head>
     <title>Customer Health Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <h1>Customer Health Dashboard</h1>
-    <table border="1">
-        <tr>
-            <th>ID</th>
-            <th>Login Score</th>
-            <th>Feature Adoption Score</th>
-            <th>Ticket Score</th>
-            <th>Invoice Payment Score</th>
-            <th>API Usage Score</th>
-            <th>Health Score</th>
-        </tr>
-        {% for c in customers %}
-        <tr>
-            <td>{{ c.customer_id }}</td>
-            <td>{{ c.login_score }}</td>
-            <td>{{ c.feature_score }}</td>
-            <td>{{ c.ticket_score }}</td>
-            <td>{{ c.invoice_payment_score }}</td>
-            <td>{{ c.api_score }}</td>
-            <td>{{ c.health_score }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+
+    <canvas id="healthChart" width="800" height="400"></canvas>
+
+    <script>
+        // Pass customers data from backend
+        const customers = {{ customers | tojson }};
+
+        // Create buckets of 10
+        const buckets = Array.from({length: 10}, (_, i) => i * 10);
+        const bucketLabels = buckets.map((b, i) => `${b+1}-${b+10}`);
+
+        // Count customers per bucket
+        const counts = Array(10).fill(0);
+        customers.forEach(c => {
+            let score = Math.floor(c.health_score);
+            let index = Math.min(Math.floor(score / 10), 9); // ensure max 9
+            counts[index] += 1;
+        });
+
+        // Create Chart.js bar chart
+        const ctx = document.getElementById('healthChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: bucketLabels,
+                datasets: [{
+                    label: 'Number of Customers',
+                    data: counts,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        stepSize: 1
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Health Score'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>

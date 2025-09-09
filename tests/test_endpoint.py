@@ -349,7 +349,7 @@ class TestAPIIntegration(unittest.TestCase):
 
         response = self.client.post("/api/customers/1/events", json=event_data)
 
-        # The status code is still 200, because TemplateResponse doesn't raise HTTPException
+    
         self.assertEqual(response.status_code, 200)
         self.assertIn("text/html", response.headers["content-type"])
 

@@ -5,3 +5,5 @@ pandas
 faker
 uvicorn
 httpx
+pytest-cov
+pytest
