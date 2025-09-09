@@ -2,7 +2,7 @@ import mysql.connector
 import pandas as pd
 import os
 import json
-from utils import config
+from src.utils import config
 db_config = config()
     
 conn = mysql.connector.connect(**db_config)
@@ -17,9 +17,10 @@ def login_freq():
     GROUP BY customer_id
     """
     cursor.execute(query)
-    login_freq = cursor.fetchall()
-
-    df_login = pd.DataFrame(login_freq)
+    rows = cursor.fetchall()
+    
+    # Ensure column names exist even if no data
+    df_login = pd.DataFrame(rows, columns=['customer_id', 'avg_logins_per_week'])
     return df_login
 
 def features_used():
@@ -31,9 +32,9 @@ def features_used():
     GROUP BY customer_id
     """
     cursor.execute(query)
-    feature_adoption = cursor.fetchall()
+    rows = cursor.fetchall()
 
-    df_feature = pd.DataFrame(feature_adoption)
+    df_feature = pd.DataFrame(rows, columns=['customer_id','feature_adoption_score'])
     return df_feature
 
 def tickets():
@@ -48,20 +49,33 @@ def tickets():
     GROUP BY customer_id
     """
     cursor.execute(query)
-    tickets = cursor.fetchall()
+    rows = cursor.fetchall()
 
-    df_tickets = pd.DataFrame(tickets)
+    # Ensure columns exist even if no data
+    df_tickets = pd.DataFrame(rows, columns=['customer_id', 'open_tickets'])
+
+    # If empty, create empty DataFrame with expected columns
+    if df_tickets.empty:
+        df_tickets = pd.DataFrame(columns=['customer_id', 'open_tickets', 'ticket_score'])
 
     # Convert to score (inverse: more tickets = lower score)
     def ticket_score(open_tickets):
-        if open_tickets == 0: return 100
-        elif open_tickets <= 2: return 75
-        elif open_tickets <= 5: return 50
-        else: return 25
+        if open_tickets == 0: 
+            return 100
+        elif open_tickets <= 2: 
+            return 75
+        elif open_tickets <= 5: 
+            return 50
+        else: 
+            return 25
 
-    df_tickets['ticket_score'] = df_tickets['open_tickets'].apply(ticket_score)
+    # Apply scoring only if column exists
+    if 'open_tickets' in df_tickets.columns and not df_tickets.empty:
+        df_tickets['ticket_score'] = df_tickets['open_tickets'].apply(ticket_score)
+    else:
+        df_tickets['ticket_score'] = pd.Series(dtype=float)
+
     return df_tickets
-
 def invoice():
     query = """
     SELECT
@@ -71,9 +85,9 @@ def invoice():
     GROUP BY customer_id
     """
     cursor.execute(query)
-    invoices = cursor.fetchall()
+    rows = cursor.fetchall()
 
-    df_invoice = pd.DataFrame(invoices)
+    df_invoice = pd.DataFrame(rows,columns=['customer_id','invoice_payment_score'])
     return df_invoice
 
 def api_call():
@@ -87,9 +101,9 @@ def api_call():
     GROUP BY customer_id
     """
     cursor.execute(query)
-    api_usage = cursor.fetchall()
+    rows = cursor.fetchall()
 
-    df_api = pd.DataFrame(api_usage)
+    df_api = pd.DataFrame(rows,columns=['customer_id', 'avg_api_calls_per_week'])
     def api_score(calls):
         if calls > 400: return 100
         elif calls > 200: return 75
