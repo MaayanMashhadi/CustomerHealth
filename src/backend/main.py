@@ -38,7 +38,6 @@ def customer_health(request: Request, customer_id: int):
     
     # Convert to dict for templating
     customer_data = customer.to_dict(orient='records')[0]
-    print(customer_data)
     # Render template
     return templates.TemplateResponse(
         "customer_detail.html",
@@ -124,6 +123,6 @@ async def add_event_html(request: Request, customer_id: int, event: dict):
 
 @app.get("/api/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request):
-    df = get_health_scores()
+    df = get_health_details()
     customers = df.to_dict(orient='records')
     return templates.TemplateResponse("dashboard.html", {"request": request, "customers": customers})

@@ -8,11 +8,21 @@
     <table border="1">
         <tr>
             <th>ID</th>
+            <th>Login Score</th>
+            <th>Feature Adoption Score</th>
+            <th>Ticket Score</th>
+            <th>Invoice Payment Score</th>
+            <th>API Usage Score</th>
             <th>Health Score</th>
         </tr>
         {% for c in customers %}
         <tr>
             <td>{{ c.customer_id }}</td>
+            <td>{{ c.login_score }}</td>
+            <td>{{ c.feature_score }}</td>
+            <td>{{ c.ticket_score }}</td>
+            <td>{{ c.invoice_payment_score }}</td>
+            <td>{{ c.api_score }}</td>
             <td>{{ c.health_score }}</td>
         </tr>
         {% endfor %}
