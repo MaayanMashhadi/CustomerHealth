@@ -27,7 +27,7 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: Mayan2020!
+      MYSQL_ROOT_PASSWORD: default
       MYSQL_DATABASE: customer_health
     volumes:
       - db_data:/var/lib/mysql
