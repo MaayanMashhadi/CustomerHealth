@@ -8,13 +8,13 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: Mayan2020!
+      MYSQL_ROOT_PASSWORD: default
       MYSQL_DATABASE: customer_health
     volumes:
     - db_data:/var/lib/mysql
     - ./database/schema.sql:/docker-entrypoint-initdb.d/1.sql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pMayan2020!"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pdefault"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -30,7 +30,7 @@ services:
     environment:
       DB_HOST: db
       DB_USER: root
-      DB_PASSWORD: Mayan2020!
+      DB_PASSWORD: default
       DB_NAME: customer_health
     # Use a custom entrypoint script
     entrypoint: ["sh", "-c", "/app/docker-entrypoint.sh"]
